@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Notice Board</title>
+    <style>
+        body {
+            overflow-y: hidden;
+            margin: 0;
+            font-family: 'Bahnschrift', sans-serif;
+            background-color: black;
+        }
+ 
+        .hero {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+ 
+        #background-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: .5;
+        }
+ 
+        nav {
+            width: 100%;
+            padding: 20px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-sizing: border-box;
+            color: white;
+        }
+ 
+        .headingText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100%;
+            color: aliceblue;
+            margin-top: 50px;
+        }
+ 
+        .topheading {
+            transform: translateX(-90px);
+        }
+ 
+        pre {
+            color: white;
+            font-size: 60px; /* Adjust the font size here */
+            margin-top: 100px;
+            margin-bottom: 100px;
+            white-space: pre-wrap; /* Allow the text to wrap and go to the next line */
+            word-wrap: break-word;
+            max-width: 100%; /* Ensure the text doesn't exceed the screen width */
+        }
+ 
+        #filesList img {
+            height: 200px;
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <video id="background-video" autoplay loop muted>
+            <source src="/images/bgvideo.webm" type="video/webm">
+        </video>
+ 
+        <nav>
+            <img src="/images/bvrit_logo.png" height="85px" class="loga">
+            <h1 class="topheading"> CSBS Digital Notice Board</h1>
+            <img src="/images/Group 5(3).png" height="80px">
+        </nav>
+ 
+    </div>
+ 
+    <div class="headingText">
+        <ul id="filesList"></ul>
+    </div>
+ 
+    <script>
+        function convertTextToSpeech(text) {
+            const utterance = new SpeechSynthesisUtterance();
+            utterance.text = text;
+            window.speechSynthesis.speak(utterance);
+        }
+ 
+        // Fetch files from server and display them
+        fetch('/files')
+        .then(response => response.json())
+        .then(files => {
+            const filesList = document.getElementById('filesList');
+            let index = 0;
+            let currentElement = null;
+ 
+            const displayNextFile = () => {
+                const file = files[index];
+                if (file) {
+                    const ext = file.split('.').pop().toLowerCase();
+                    // Increment index and loop back to 0 if it reaches the end
+                    if (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'gif') {
+                        // Display image
+                        if (currentElement) {
+                            currentElement.parentNode.removeChild(currentElement);
+                        }
+                        const li = document.createElement('li');
+                        const img = document.createElement('img');
+                        img.src = `uploads/${file}`;
+                        img.alt = file;
+                        img.style.height = '600px';
+                        img.style.width = 'auto';
+                        li.appendChild(img);
+                        filesList.appendChild(li);
+                        currentElement = li;
+                        index = (index + 1) % files.length;
+                        if (index < files.length) {
+                            setTimeout(displayNextFile, 10000); // 10 second gap
+                        } else {
+                            setTimeout(displayNextFile, 10000); // Restart from the beginning
+                        }
+                    } else if (ext === 'txt') {
+                        // Display text file
+                        if (currentElement) {
+                            currentElement.parentNode.removeChild(currentElement);
+                        }
+                        const li = document.createElement('li');
+                        const pre = document.createElement('pre');
+                        fetch(`uploads/${file}`)
+                            .then(response => response.text())
+                            .then(text => {
+                                pre.textContent = text;
+                                // Convert text to speech
+                                convertTextToSpeech(text);
+                            })
+                            .catch(error => {
+                                console.error('Error fetching text file:', error);
+                            });
+                        pre.style.fontSize = '60px'; /* Adjust the font size here */
+                        pre.style.fontFamily = 'Bahnschrift';
+                        li.appendChild(pre);
+                        filesList.appendChild(li);
+                        currentElement = li;
+                        index = (index + 1) % files.length;
+                        if (index < files.length) {
+                            setTimeout(displayNextFile, 5000);
+                        } else {
+                            setTimeout(displayNextFile, 5000);
+                        }
+                    } else if (ext === 'mp4') {
+ 
+                        if (currentElement) {
+                            currentElement.parentNode.removeChild(currentElement);
+                        }
+                        const li = document.createElement('li');
+                        const video = document.createElement('video');
+                        video.src = `uploads/${file}`;
+                        video.controls = true;
+                        video.style.height = '600px';
+                        video.style.width = 'auto';
+                        li.appendChild(video);
+                        filesList.appendChild(li);
+                        currentElement = li;    
+                        index = (index + 1) % files.length;
+                        if (index < files.length) {
+                            setTimeout(displayNextFile, 10000);
+                        } else {
+                            setTimeout(displayNextFile, 10000);
+                        }
+                    } else {
+                        index = (index + 1) % files.length;
+                        if (index < files.length) {
+                            setTimeout(displayNextFile, 0);
+                        } else {
+                            setTimeout(displayNextFile, 0); // Restart from the beginning
+                        }
+                    }
+                }
+            };
+ 
+ 
+            displayNextFile();
+        })
+            .catch(error => {
+                console.error('Error fetching files:', error);
+            });
+    </script>
+ 
+</body>
+</html>
+ 
+ 
+ 

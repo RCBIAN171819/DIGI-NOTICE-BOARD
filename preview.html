@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Notice Board</title>
+
+    <style>
+        body {
+            overflow-y: hidden;
+            margin: 0;
+            font-family: 'Bahnschrift', sans-serif;
+            background-color: black;
+        }
+    
+        .hero {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+    
+        #background-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: .5;
+        }
+    
+        nav {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-sizing: border-box;
+            color: white;
+        }
+    
+        .headingText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100%;
+            color: aliceblue;
+        }
+    
+        .topheading {
+            transform: translateX(-90px);
+        }
+    
+        pre {
+            color: white;
+            font-size: 200px;
+            padding: 0;
+        }
+    
+        ul#filesList {
+            list-style-type: none; /* Remove list markers */
+            padding-left: 0; /* Remove default padding */
+        }
+    </style>
+    
+</head>
+<body>
+    <div class="hero">
+        <video id="background-video" autoplay loop muted>
+            <source src="/images/bgvideo.webm" type="video/webm">
+        </video>
+    
+    </div>
+
+    <div class="headingText">
+        <ul id="filesList"></ul>
+    </div>
+
+    <script>
+        fetch('/files')
+        .then(response => response.json())
+        .then(files => {
+            const filesList = document.getElementById('filesList');
+            let index = 0;
+            let currentElement = null;
+    
+            const displayNextFile = () => {
+                const file = files[index];
+                if (file) {
+                    const ext = file.split('.').pop().toLowerCase();
+                    
+                    if (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'gif') {
+                        
+                        if (currentElement) {
+                            currentElement.parentNode.removeChild(currentElement);
+                        }
+                        const li = document.createElement('li');
+                        const img = document.createElement('img');
+                        img.src = `uploads/${file}`;
+                        img.alt = file;
+                        img.style.height = '240px';
+                        img.style.width = 'auto';
+                        li.appendChild(img);
+                        filesList.appendChild(li);
+                        currentElement = li;
+                    } else if (ext === 'txt') {
+                        if (currentElement) {
+                            currentElement.parentNode.removeChild(currentElement);
+                        }
+                        const li = document.createElement('li');
+                        const pre = document.createElement('pre');
+                        fetch(`uploads/${file}`)
+                        .then(response => response.text())
+                        .then(text => {
+                            pre.textContent = text;
+                        })
+                        .catch(error => {
+                            console.error('Error fetching text file:', error);
+                        });
+                        pre.style.fontSize = '25px';
+                        pre.style.fontFamily = 'Bahnschrift';
+                        li.appendChild(pre);
+                        filesList.appendChild(li);
+                        currentElement = li;
+                    } else if (ext === 'mp4') {
+                        
+                        if (currentElement) {
+                            currentElement.parentNode.removeChild(currentElement);
+                        }
+                        const li = document.createElement('li');
+                        const video = document.createElement('video');
+                        video.src = `uploads/${file}`;
+                        video.controls = true;
+                        video.style.height = '600px';
+                        video.style.width = 'auto';
+                        li.appendChild(video);
+                        filesList.appendChild(li);
+                        currentElement = li;
+                    } else {
+                        
+                    }
+                    index++;
+                    
+                    setTimeout(displayNextFile, 2500);
+                } else {
+                    // No more files, reload the page instantly
+                    window.location.reload();
+                }
+            };
+    
+            displayNextFile(); // Start displaying files
+        })
+        .catch(error => {
+            console.error('Error fetching files:', error);
+        });
+    </script>
+    
+    
+</body>
+</html>
